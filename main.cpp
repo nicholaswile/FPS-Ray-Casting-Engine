@@ -33,18 +33,18 @@ int main() {
 	
 	map += L"################";
 	map += L"#..............#";
+	map += L"#..###.........#";
+	map += L"#..............#";
+	map += L"#.........######";
+	map += L"#..#...........#";
+	map += L"#..#...........#";
+	map += L"#..#...........#";
 	map += L"#..............#";
 	map += L"#..............#";
+	map += L"######.........#";
 	map += L"#..............#";
 	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#..............#";
+	map += L"#...##########.#";
 	map += L"#..............#";
 	map += L"################";
 
@@ -78,7 +78,6 @@ int main() {
 			playerY -= sinf(playerA) * 5.0f * elapsedTime;
 		}
 		#pragma endregion 
-
 
 		#pragma region RENDERER
 		// The last character in the buffer is the escape character 
@@ -116,6 +115,10 @@ int main() {
 					if (map[testY * mapWidth + testX] == '#') {
 						hitWall = true;
 					}
+					else if (testX!=(int)playerX && testY !=(int)playerY){
+						screenBuffer[testY * screenWidth + testX] = '*';
+					}
+
 				}
 			}
 
@@ -132,15 +135,23 @@ int main() {
 			// Starts at floorStart and ends at bottom of screen (top to bottom)
 			int floorStart = screenHeight - ceilingEnd;
 
+			short shading = ' ';
+			// From close to far
+			if (distanceToWall <= maxDepth / 4.0f) { shading = 0x2588; } // full block 
+			else if (distanceToWall < maxDepth / 3.0f) { shading = 0x2593; } // dark shade 
+			else if (distanceToWall < maxDepth / 2.0f) { shading = 0x2592; } // medium shade 
+			else if (distanceToWall < maxDepth) { shading = 0x2591; } // light shade 
+			else { shading = ' '; } // space 
+
 			// Everything in between the end of the ceiling and start of the floor is wall
 			for (int y = 0; y < screenHeight; y++) {
 				int index = y * screenWidth + x;
-
+				
 				if (y <= ceilingEnd) {
 					screenBuffer[index] = ' ';
 				}
 				else if (y > ceilingEnd && y <= floorStart) {
-					screenBuffer[index] = '#';
+					screenBuffer[index] = shading;
 				}
 				else if (y > floorStart) {
 					screenBuffer[index] = ' ';
@@ -152,7 +163,12 @@ int main() {
 		// Adds a map on the screen
 		for (int y = 0; y < mapHeight; y++) {
 			for (int x = 0; x < mapWidth; x++) {
+				
+				if (screenBuffer[y * screenWidth + x] == '*') {
+					continue;
+				}
 				screenBuffer [y*screenWidth + x] = map[y * mapWidth + x];
+
 				if ((int)playerX == x && (int)playerY == y) {
 					screenBuffer[y * screenWidth + x] = 'O';
 				}
