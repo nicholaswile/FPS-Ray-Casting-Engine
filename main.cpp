@@ -1,6 +1,7 @@
-#include <iostream>
-#include <Windows.h>
-
+#include <iostream> // gives wide string (more symbols supported), sine, and cosine functions
+#include <Windows.h> // gives handle and functions to create and set console screen buffer
+#include <chrono> // gives system clock to calculate elapsed time 
+#include <string>
 // Screen
 int screenWidth = 120;
 int screenHeight = 40;
@@ -47,7 +48,39 @@ int main() {
 	map += L"#..............#";
 	map += L"################";
 
+	auto previousTime = std::chrono::system_clock::now();
+	auto currentTime = std::chrono::system_clock::now();
+
+	// Game Loop
 	while (true) {
+		// Update elapsed time every frame
+		currentTime = std::chrono::system_clock::now();
+		std::chrono::duration<float> deltaTime = currentTime - previousTime;
+		previousTime = currentTime;
+		float elapsedTime = deltaTime.count();
+		
+		#pragma region INPUT
+		// Rotate player left and right
+		if (GetAsyncKeyState((unsigned short)'A') & 0x8000) {
+			playerA -= 1.0f * elapsedTime;
+		}
+		if (GetAsyncKeyState((unsigned short)'D') & 0x8000) {
+			playerA += 1.0f * elapsedTime;
+		}
+
+		// Move player forward and back
+		if (GetAsyncKeyState((unsigned short)'W') & 0x8000) {
+			playerX += cosf(playerA) * 5.0f * elapsedTime;
+			playerY += sinf(playerA) * 5.0f * elapsedTime;
+		}
+		if (GetAsyncKeyState((unsigned short)'S') & 0x8000) {
+			playerX -= cosf(playerA) * 5.0f * elapsedTime;
+			playerY -= sinf(playerA) * 5.0f * elapsedTime;
+		}
+		#pragma endregion 
+
+
+		#pragma region RENDERER
 		// The last character in the buffer is the escape character 
 		screenBuffer[numPixels - 1] = '\0';
 
@@ -89,7 +122,7 @@ int main() {
 			float midpoint = (float)screenHeight / 2.0f;
 
 			// As distance to wall increases, height of the wall decreases
-			float wallHeight = (float)screenHeight / distanceToWall; 
+			float wallHeight = (float)screenHeight / distanceToWall;
 
 			// A higher wall makes a smaller ceiling 
 			// Starts at top of screen and ends at ceilingEnd (top to bottom)
@@ -114,9 +147,31 @@ int main() {
 				}
 			}
 		}
+		#pragma endregion 
 
+		// Adds a map on the screen
+		for (int y = 0; y < mapHeight; y++) {
+			for (int x = 0; x < mapWidth; x++) {
+				screenBuffer [y*screenWidth + x] = map[y * mapWidth + x];
+				if ((int)playerX == x && (int)playerY == y) {
+					screenBuffer[y * screenWidth + x] = 'O';
+				}
+			}
+		}
+
+		std::wstring stats;
+		stats += L" X: " + std::to_wstring((int)playerX);
+		stats += L" Y: " + std::to_wstring((int)playerY);
+		stats += L" A: " + std::to_wstring((int)playerA) + L" ";
+
+		for (int i = stats.length()-1; i >= 0; i--) {
+			screenBuffer[screenWidth * (screenHeight - 1) + (screenWidth - i)] = stats[stats.length()-1-i];
+		}
+		// Update frame
 		// Write to location {0, 0} [top left corner] to stop console from scrolling down
 		WriteConsoleOutputCharacter(console, screenBuffer, numPixels, { 0,0 }, &bytesWritten);
+		
+		
 	}
 	return 0;
 }
