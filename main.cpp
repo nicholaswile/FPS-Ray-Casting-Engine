@@ -1,7 +1,10 @@
 #include <iostream> // gives wide string (more symbols supported), sine, and cosine functions
 #include <Windows.h> // gives handle and functions to create and set console screen buffer
 #include <chrono> // gives system clock to calculate elapsed time 
-#include <string>
+#include <string> // gives wstring
+
+#define PI 3.14159f
+
 // Screen
 int screenWidth = 120;
 int screenHeight = 40;
@@ -17,7 +20,7 @@ int mapWidth = 16;
 int mapHeight = 16;
 
 // Camera
-float FOV = 3.14159f / 4.0f;
+float FOV = PI / 4.0f;
 float maxDepth = 16.0f; // cuz map size is 16
 
 int main() {
@@ -32,20 +35,20 @@ int main() {
 	std::wstring map;
 	
 	map += L"################";
-	map += L"#..............#";
-	map += L"#..###.........#";
-	map += L"#..............#";
-	map += L"#.........######";
-	map += L"#..#...........#";
-	map += L"#..#...........#";
-	map += L"#..#...........#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"######.........#";
-	map += L"#..............#";
-	map += L"#..............#";
-	map += L"#...##########.#";
-	map += L"#..............#";
+	map += L"#              #";
+	map += L"#  ###         #";
+	map += L"#              #";
+	map += L"#         ######";
+	map += L"#  #           #";
+	map += L"#  #           #";
+	map += L"#  #           #";
+	map += L"#              #";
+	map += L"#              #";
+	map += L"######         #";
+	map += L"#              #";
+	map += L"#              #";
+	map += L"#    ######### #";
+	map += L"#              #";
 	map += L"################";
 
 	auto previousTime = std::chrono::system_clock::now();
@@ -63,20 +66,89 @@ int main() {
 		// Rotate player left and right
 		if (GetAsyncKeyState((unsigned short)'A') & 0x8000) {
 			playerA -= 1.0f * elapsedTime;
+			if (playerA < 0) {
+				playerA = 2 * PI;
+			}
+			
 		}
 		if (GetAsyncKeyState((unsigned short)'D') & 0x8000) {
 			playerA += 1.0f * elapsedTime;
+			if (playerA >= 2 * PI) {
+				playerA = 0;
+			}
 		}
+
 
 		// Move player forward and back
 		if (GetAsyncKeyState((unsigned short)'W') & 0x8000) {
 			playerX += cosf(playerA) * 5.0f * elapsedTime;
 			playerY += sinf(playerA) * 5.0f * elapsedTime;
+
+			if (map[(int)playerY * mapWidth + (int)playerX] == '#') {
+				playerX -= cosf(playerA) * 5.0f * elapsedTime;
+				playerY -= sinf(playerA) * 5.0f * elapsedTime;
+			}
 		}
 		if (GetAsyncKeyState((unsigned short)'S') & 0x8000) {
 			playerX -= cosf(playerA) * 5.0f * elapsedTime;
 			playerY -= sinf(playerA) * 5.0f * elapsedTime;
+
+			if (map[(int)playerY * mapWidth + (int)playerX] == '#') {
+				playerX += cosf(playerA) * 5.0f * elapsedTime;
+				playerY += sinf(playerA) * 5.0f * elapsedTime;
+			}
 		}
+
+		// Strafe side left and right
+		if (GetAsyncKeyState((unsigned short)'Q') & 0x8000) {
+			float tempX = playerX, tempY = playerY;
+			if (playerA <= PI / 2.0f) {
+				playerX += abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY -= abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			else if (playerA <= PI) {
+				playerX += abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY += abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			else if (playerA <= 3 * PI / 2.0f) {
+				playerX -= abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY += abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			else {
+				playerX -= abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY -= abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			if (map[int(playerY) * mapWidth + playerX] == '#') {
+				playerX = tempX;
+				playerY = tempY;
+			}
+		}
+
+		if (GetAsyncKeyState((unsigned short)'E') & 0x8000) {
+			float tempX = playerX, tempY = playerY;
+			if (playerA <= PI / 2.0f) {
+				playerX -= abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY += abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			else if (playerA <= PI) {
+				playerX -= abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY -= abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			else if (playerA <= 3 * PI / 2.0f) {
+				playerX += abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY -= abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			else {
+				playerX += abs(cosf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+				playerY += abs(sinf(PI / 2.0f + playerA) * 5.0f * elapsedTime);
+			}
+			if (map[int(playerY) * mapWidth + playerX] == '#') {
+				playerX = tempX;
+				playerY = tempY;
+			}
+		}
+
+		
 		#pragma endregion 
 
 		#pragma region RENDERER
@@ -115,8 +187,9 @@ int main() {
 					if (map[testY * mapWidth + testX] == '#') {
 						hitWall = true;
 					}
-					else if (testX!=(int)playerX && testY !=(int)playerY){
-						screenBuffer[testY * screenWidth + testX] = '*';
+					// Visualize player FOV on the map
+					else if (!(testX == (int)playerX && testY == (int)playerY)){
+						screenBuffer[testY * screenWidth + testX] = '.';
 					}
 
 				}
@@ -154,35 +227,46 @@ int main() {
 					screenBuffer[index] = shading;
 				}
 				else if (y > floorStart) {
-					screenBuffer[index] = ' ';
+					float floorCloseness = ((float)y - midpoint) / midpoint;
+					if (floorCloseness <= .25f) { shading = ' '; }
+					else if (floorCloseness <= .5f) { shading = '-'; }
+					else if (floorCloseness <= .75f) { shading = '='; }
+					else if (floorCloseness <= .9f) { shading = '#'; }
+					screenBuffer[index] = shading;
 				}
 			}
 		}
 		#pragma endregion 
 
-		// Adds a map on the screen
+		// Display a map on the screen
 		for (int y = 0; y < mapHeight; y++) {
 			for (int x = 0; x < mapWidth; x++) {
 				
-				if (screenBuffer[y * screenWidth + x] == '*') {
+				// Do not overwrite ray cast / FOV visualization on map
+				if (screenBuffer[y * screenWidth + x] == '.') {
 					continue;
 				}
+
 				screenBuffer [y*screenWidth + x] = map[y * mapWidth + x];
 
+				// Draw player on top of map
 				if ((int)playerX == x && (int)playerY == y) {
 					screenBuffer[y * screenWidth + x] = 'O';
 				}
 			}
 		}
 
+		// Display stats
 		std::wstring stats;
-		stats += L" X: " + std::to_wstring((int)playerX);
-		stats += L" Y: " + std::to_wstring((int)playerY);
-		stats += L" A: " + std::to_wstring((int)playerA) + L" ";
+		stats += L" X: " + std::to_wstring(playerX);
+		stats += L" Y: " + std::to_wstring(playerY);
+		stats += L" A: " + std::to_wstring(playerA);
+		stats += L" FPS: " + std::to_wstring((float)1/elapsedTime) + L" ";
 
 		for (int i = stats.length()-1; i >= 0; i--) {
 			screenBuffer[screenWidth * (screenHeight - 1) + (screenWidth - i)] = stats[stats.length()-1-i];
 		}
+
 		// Update frame
 		// Write to location {0, 0} [top left corner] to stop console from scrolling down
 		WriteConsoleOutputCharacter(console, screenBuffer, numPixels, { 0,0 }, &bytesWritten);
